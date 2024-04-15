@@ -10,4 +10,4 @@ docker run -it --env DISPLAY=$DISPLAY \
     -v "$files_dir/src/":/root/catkin_ws/src/external \
     -v "$files_dir/bagfiles/":/root/bagfiles \
     -v "$files_dir/datasets/":/root/datasets \
-    atom terminator
+    gribeiro00/atom:v1.0.0 terminator

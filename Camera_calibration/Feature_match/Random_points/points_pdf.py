@@ -26,4 +26,4 @@ def generate_pdf(filename, num_points):
     c.save()
 
 # Usage example
-generate_pdf("random_points.pdf", 10000)
+generate_pdf("random_points.pdf", 5000)

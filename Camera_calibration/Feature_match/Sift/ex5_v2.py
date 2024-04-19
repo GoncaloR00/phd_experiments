@@ -126,8 +126,8 @@ def main():
     cv2.namedWindow('stitched image', cv2.WINDOW_AUTOSIZE)
     cv2.imshow('stitched image', stitched_image)
 
-
     cv2.waitKey(0)
+
     # --------------------------------------
     # Termination
     # --------------------------------------

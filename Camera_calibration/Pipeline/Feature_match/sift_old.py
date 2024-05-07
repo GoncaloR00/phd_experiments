@@ -1,9 +1,10 @@
-import numpy as np
+#!/usr/bin/env python3
+
+from copy import deepcopy
 import cv2
-from random import randint
+import numpy as np
 
-
-def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, lowe_ratio:float = 0.3, visualization:bool = 0):
+def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 1000, lowe_ratio:float = 0.3, visualization:bool = 0):
     # --------------------------------------
     # Initialization
     # --------------------------------------
@@ -22,7 +23,7 @@ def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, 
     search_params = dict(checks = 50)
     flann_matcher = cv2.FlannBasedMatcher(index_params, search_params)
     two_best_matches = flann_matcher.knnMatch(imgb_descriptors, imga_descriptors, k=2)
-    
+
     # Create a list of matches
     matches = []
     for match_idx, match in enumerate(two_best_matches):
@@ -33,15 +34,20 @@ def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, 
         # David Lowe's ratio
         if best_match.distance < lowe_ratio * second_match.distance: # this is a robust match, keep it
             matches.append(best_match) # create a list to show with drawMatches
-    points1 = np.float32([imga_key_points[m.trainIdx].pt for m in matches])
-    points2 = np.float32([imgb_key_points[m.queryIdx].pt for m in matches])
+
+
     if visualization:
-        concatenated_image = np.concatenate((image_a, image_b), axis=1)
-        concatenated_image = cv2.cvtColor(concatenated_image,cv2.COLOR_GRAY2RGB)
-        for i in range(len(points1)):
-            cv2.line(concatenated_image, np.asarray(points1[i], dtype=int), tuple(map(sum, zip(np.asarray(points2[i], dtype=int), (image_a.shape[1], 0)))), (randint(0,255), randint(0,255), randint(0,255)), 1)
-        cv2.imshow('Linked Points', concatenated_image)
+        matches_image = cv2.drawMatches(image_b, imgb_key_points, image_a, imga_key_points, matches, None)
+        matches_image = cv2.cvtColor(matches_image, cv2.COLOR_BGR2RGB)
+        cv2.namedWindow('matches image', cv2.WINDOW_NORMAL)
+        cv2.imshow('matches image', matches_image)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-    
-    return points1, points2
+
+    return imga_key_points, imgb_key_points, matches
+
+if __name__ == "__main__":
+    image_a = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/1.jpg")
+    image_b = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/2.jpg")
+    imga_key_points, imgb_key_points, matches = feature_match(image_a, image_b, features =5000, visualization = True)
+    # print(f"####################### Image A keypoints #######################\n{imga_key_points}\n####################### Image B keypoints #######################\n{imgb_key_points}\n####################### Matches #######################\n{matches}")

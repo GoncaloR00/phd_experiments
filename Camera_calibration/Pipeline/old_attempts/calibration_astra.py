@@ -152,6 +152,8 @@ def triangulate_and_plot(P1, P2, points1, points2):
 # Example usage:
 img1_path = "/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/img0_0.png"
 img2_path = "/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/img0_1.png"
+img1_path = "/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png"
+img2_path = "/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_2.png"
 # Load images
 image1 = cv2.imread(img1_path, cv2.IMREAD_GRAYSCALE)
 image2 = cv2.imread(img2_path, cv2.IMREAD_GRAYSCALE)
@@ -165,15 +167,22 @@ intrinsic_matrix2 = intrinsic_matrix = np.array([[707.717612, 0, 304.802554],
                                                 [0, 707.680471, 227.285062],
                                                 [0, 0, 1]])
 
+intrinsic_matrix1 = intrinsic_matrix = np.array([[629.400223, 0.000000, 325.240410],
+                                                [0.000000, 627.585852, 262.311140],
+                                                [0.000000, 0.000000, 1.000000]])
+intrinsic_matrix2 = intrinsic_matrix = np.array([[629.400223, 0.000000, 325.240410],
+                                                [0.000000, 627.585852, 262.311140],
+                                                [0.000000, 0.000000, 1.000000]])
+
 # cameraMatrix1 = [...]  # Intrinsic parameters of camera 1
 distCoeffs1 = None  # Distortion coefficients of camera 1
-# distCoeffs1 = np.array([0.228289, -0.244408, -0.002493, -0.012352, 0])
+distCoeffs1 = np.array([0.228289, -0.244408, -0.002493, -0.012352, 0])
 
 # cameraMatrix2 = [...]  # Intrinsic parameters of camera 2
 distCoeffs2 = None  # Distortion coefficients of camera 2
-# distCoeffs2 = np.array([0.228289, -0.244408, -0.002493, -0.012352, 0])
+distCoeffs2 = np.array([0.228289, -0.244408, -0.002493, -0.012352, 0])
 
-points1, points2 = feature_match(image1, image2)
+points1, points2 = feature_match(image1, image2, visualization=True)
 # points1 = cv2.undistortPoints(np.array(points1), intrinsic_matrix1, distCoeffs1)
 # points2 = cv2.undistortPoints(np.array(points2), intrinsic_matrix2, distCoeffs2)
 P1, P2 = calibrate_cameras(points1, points2, intrinsic_matrix1, distCoeffs1, intrinsic_matrix2, distCoeffs2)

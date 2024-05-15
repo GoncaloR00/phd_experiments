@@ -72,7 +72,7 @@ def click_event(event, x, y, flags, params):
         x_mouse = x
         y_mouse = y
 
-def find_matching_point(img1, img2, point, epiline, window_size=5, similarity_func=cv2.norm):
+def find_matching_point(img1, img2, point, epiline, window_size=5, l_ratio = 0.8, similarity_func=cv2.norm):
     # Initialize best match (lowest distance)
     best_match = None
     second_dist = None
@@ -91,22 +91,34 @@ def find_matching_point(img1, img2, point, epiline, window_size=5, similarity_fu
         # Check if y is within image bounds
         if y < 0 or y >= img2.shape[0]:
             continue
+        
+        a1 = point[1]-window_size
+        b1 = point[1]+window_size
+        c1 = point[0]-window_size
+        d1 = point[0]+window_size
+        a2 = y-window_size
+        b2 = y+window_size
+        c2 = x-window_size
+        d2 = x+window_size
+
+        if a1 < 0 or c1 <0 or a2 <0 or c2 <0 or b1 > img1.shape[0] or d1 > img1.shape[1] or b2 > img2.shape[0] or d2 > img2.shape[1]:
+            continue
 
         # Compute similarity measure
-        try:
-            distance = similarity_func(img1[point[1]-window_size:point[1]+window_size, point[0]-window_size:point[0]+window_size],
-                                    img2[y-window_size:y+window_size, x-window_size:x+window_size], cv2.NORM_L1)
+        distance = similarity_func(img1[a1:b1, c1:d1],
+                                img2[a2:b2, c2:d2], cv2.NORM_L1)
 
-            # Update best match if better
-            if distance < best_distance:
-                second_dist = best_distance
-                best_distance = distance
-                best_match = (x, y)
-        except:
-            pass
-    if second_dist == float('inf'):
+        # Update best match if better
+        if distance < best_distance:
+            second_dist = best_distance
+            best_distance = distance
+            best_match = (x, y)
+        #     print(f"img1[{point[1]-window_size}:{point[1]+window_size}, {point[0]-window_size}:{point[0]+window_size}], img2[{y-window_size}:{y+window_size}, {x-window_size}:{x+window_size}")
+    print(f"Best distance = {best_distance}\nSecond = {second_dist}")
+    if second_dist == float('inf') or second_dist is None:
         best_match = None
-    elif best_distance > 0.8*second_dist:
+    # elif best_distance > 0.8*second_dist:
+    elif not(best_distance < l_ratio*second_dist):
         print('invalid')
         best_match = None
 

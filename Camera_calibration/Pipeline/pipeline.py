@@ -44,6 +44,7 @@ def triangulate_and_plot(P1, P2, points1, points2):
     # Triangulate points
     points_hom = cv2.triangulatePoints(P1, P2, points1.T, points2.T)
     points_3D = points_hom / points_hom[3]
+    # points_3D = points_hom
     
     # Plot 3D points
     fig = plt.figure()

@@ -60,10 +60,26 @@ def calibrate_cameras(points1, points2, cameraMatrix1, distCoeffs1, cameraMatrix
     P1 = cameraMatrix1 @ P1
     P2 = cameraMatrix2 @ P2
     # return P1, P2
-    print(P1)
-    print('################################')
-    print(P2)
     return R, t, F, P1, P2
+from sys import getsizeof
+def triangulate_and_plot(P1, P2, points1, points2):
+    # Triangulate points
+    points_hom = cv2.triangulatePoints(P1, P2, points1.T, points2.T)
+    np.save('teste.npy', points_hom)
+    # points_hom[points_hom==0]=0.0001
+    # getsizeof(points_hom)
+    print('here')
+    print(len(points_hom[3]))
+    mask = points_hom[3] != 0
+    points_hom2 = np.array(points_hom)
+    points_hom = points_hom[:, mask]
+    print(len(points_hom[3]))
+    # points_3D = points_hom
+    print('here')
+    points_3D = points_hom / points_hom[3]
+    print('here')
+    # Plot 3D points
+    # print(getsizeof(points_hom))
 
 
 
@@ -148,46 +164,6 @@ if __name__=="__main__":
     points1, points2 = feature_match(img1, img2, visualization=False)
     R, t, F, P1, P2 = calibrate_cameras(points1, points2, K, distCoeffs1, K, distCoeffs2)
 
-    # Graphical
-    while 1:
-        try:
-            # displaying the image 
-            cv2.imshow('point', img1_plot)
-            cv2.imshow('line', img2_plot)
-            # setting mouse handler for the image 
-            # and calling the click_event() function 
-            cv2.setMouseCallback('point', click_event)
-            if not(x_mouse == old_x_mouse or y_mouse == old_y_mouse):
-                old_x_mouse = x_mouse
-                old_y_mouse = y_mouse
-                print(f"#################\nX: {x_mouse}\nY: {y_mouse}\n#################\n")
-                img1_plot = copy.deepcopy(img1_back)
-                img2_plot = copy.deepcopy(img2_back)
-                point_in_image_1 = (x_mouse, y_mouse)
-                cv2.circle(img1_plot, point_in_image_1, 1, (0,0,255), 2)
-                # Convert the point to homogeneous coordinates.
-                point_in_image_1_hom = np.array([*point_in_image_1, 1])
-                # Compute the corresponding epipolar line in the second image.
-                epipolar_line_in_image_2 = np.dot(F, point_in_image_1_hom)
-                _, cols = img2.shape[:2]
-                x0, y0 = map(int, [0, -epipolar_line_in_image_2[2]/epipolar_line_in_image_2[1]])
-                x1, y1 = map(int, [cols, -(epipolar_line_in_image_2[2] + epipolar_line_in_image_2[0]*cols) / epipolar_line_in_image_2[1]])
-                a = y1-y0
-                b = x0-x1
-                c = y0*(x1-x0)-(y1-y0)*x0
-                epiline = [a, b, c]
-                print(epiline)
-                print(f"x0 = {x0}\nx1 = {x1}\ny0 = {y0}\ny1 = {y1}\n")
-                best_point = find_matching_point(img1, img2, point_in_image_1, epiline, window_size=5, similarity_func=cv2.norm)
-                img2_plot = cv2.line(img2_plot, (x0, y0), (x1, y1), color=(255, 0, 0), thickness=1)
-                if not(best_point is None):
-                    cv2.circle(img2_plot, (int(best_point[0]), int(best_point[1])), 1, (0,0,255), 2)
-            cv2.waitKey(1) 
-        except KeyboardInterrupt:
-            break
-
-
-
     # # Save data
     # points_1 = []
     # points_2 = []
@@ -220,3 +196,25 @@ if __name__=="__main__":
     #             points_2.append(best_point)
     #             cv2.circle(img2_plot, (int(best_point[0]), int(best_point[1])), 1, (0,0,255), 2)
     #         cv2.waitKey(1)
+
+    # with open("points1.json", 'w') as f:
+    #     json.dump(points_1, f, indent=2)
+    # with open("points2.json", 'w') as f:
+    #     json.dump(points_2, f, indent=2)
+    
+    with open("points1.json", 'r') as f:
+        points1 = np.array(json.load(f))
+    with open("points2.json", 'r') as f:
+        points2 = np.array(json.load(f))
+    
+
+    
+
+    # check_points1 = points1[points1==np.nan]
+    print(np.count_nonzero(np.isinf(points1)))
+    # points1 = points1[3000:3060]
+    # points2 = points2[3000:3060]
+    # print(points1)
+    triangulate_and_plot(P1, P2, points1, points2)
+    # close the window 
+    # cv2.destroyAllWindows()

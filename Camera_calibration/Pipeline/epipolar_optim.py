@@ -96,9 +96,21 @@ def remove_isolated_points(pcd, nb_neighbors=20, std_ratio=2.0):
 
     # Return inlier point cloud
     return cl
+
+
+def args_cpp_nparray(array):
+    args = [np.ctypeslib.ndpointer(dtype=array.dtype)]
+    for i in range(0, len(array.shape)):
+        args.append(ctypes.c_int)
+    return args
+def cpp_nparray(array):
+    return array, *array.shape
+
+
+
 def main():
-    lib = ctypes.cdll.LoadLibrary('./libmatching_points.so')
-    lib.find_matching_points.argtypes = [np.ctypeslib.ndpointer(dtype=np.uint8), np.ctypeslib.ndpointer(dtype=np.uint8),  np.ctypeslib.ndpointer(dtype=np.uint16), np.ctypeslib.ndpointer(dtype=np.float64), ctypes.c_int8, ctypes.c_float]
+    # lib = ctypes.cdll.LoadLibrary('./libmatching_points.so')
+    # lib.find_matching_points.argtypes = [np.ctypeslib.ndpointer(dtype=np.uint8), np.ctypeslib.ndpointer(dtype=np.uint8),  np.ctypeslib.ndpointer(dtype=np.uint16), np.ctypeslib.ndpointer(dtype=np.float64), ctypes.c_int8, ctypes.c_float]
     img1 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png", cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_2.png", cv2.IMREAD_GRAYSCALE)
     img1_back = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png")
@@ -126,7 +138,13 @@ def main():
     print('testing...')
     # lib.maini()
     # print('here')
-    points_1, points_2 = lib.find_matching_points(img1, img2, coordinate_array.astype(np.uint16), epipolar, 5, 0.8)
+    lib = ctypes.CDLL('./lib_test.so')
+    lib.process_image.argtypes = [*args_cpp_nparray(img1_plot), *args_cpp_nparray(img2_plot), *args_cpp_nparray(coordinate_array.astype(np.uint16)), *args_cpp_nparray(epipolar), ctypes.c_int, ctypes.c_float]
+    lib.process_image(*cpp_nparray(img1_plot), *cpp_nparray(img2_plot), *cpp_nparray(coordinate_array.astype(np.uint16)), *cpp_nparray(epipolar), 5, 0.8)
+
+    # points_1, points_2 = lib.find_matching_points(img1, img2, coordinate_array.astype(np.uint16), epipolar, 5, 0.8)
+    
+    # print(coordinate_array.shape)
 
 if __name__ == "__main__":
     # profile = cProfile.Profile()

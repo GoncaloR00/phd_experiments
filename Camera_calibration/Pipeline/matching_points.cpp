@@ -1,17 +1,13 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
-
+#include <iostream>
 #include <stdio.h>
-// For testing
 
 extern "C" {
-    // void maini() {
-    //      printf ("CPP running\n");
-    // }
     std::pair<std::vector<cv::Point>, std::vector<cv::Point>> find_matching_points(cv::Mat img1, cv::Mat img2, std::vector<cv::Point> coord_array, std::vector<cv::Vec3f> epiline_array, int window_size=5, float l_ratio = 0.8) {
     std::vector<cv::Point> points_1;
     std::vector<cv::Point> points_2;
-    // printf (std::to_string(5));
+    std::cout << coord_array << std::endl <<std::flush;
     for (int idx = 0; idx < coord_array.size(); idx++) {
         cv::Point coord = coord_array[idx];
         cv::Vec3f line = epiline_array[idx];
@@ -46,4 +42,7 @@ extern "C" {
     }
     return std::make_pair(points_1, points_2);
 }
+    int main(){
+        
+    }
 }

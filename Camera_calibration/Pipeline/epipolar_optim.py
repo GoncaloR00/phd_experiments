@@ -108,6 +108,33 @@ def cpp_nparray(array):
 
 
 
+
+
+
+
+# from ctypes import *
+
+class Point(ctypes.Structure):
+    _fields_ = [("x", ctypes.c_int), ("y", ctypes.c_int)]
+
+class PointsPair(ctypes.Structure):
+    _fields_ = [("first", ctypes.POINTER(Point)), ("first_size", ctypes.c_int), ("second", ctypes.POINTER(Point)), ("second_size", ctypes.c_int)]
+
+# lib = ctypes.cdll.LoadLibrary("your_library.so")
+# get_points = lib.get_points
+
+# data = get_points()
+# for i in range(data.first_size):
+#     print(data.first[i].x, data.first[i].y)
+# for i in range(data.second_size):
+#     print(data.second[i].x, data.second[i].y)
+
+
+
+
+
+
+
 def main():
     # lib = ctypes.cdll.LoadLibrary('./libmatching_points.so')
     # lib.find_matching_points.argtypes = [np.ctypeslib.ndpointer(dtype=np.uint8), np.ctypeslib.ndpointer(dtype=np.uint8),  np.ctypeslib.ndpointer(dtype=np.uint16), np.ctypeslib.ndpointer(dtype=np.float64), ctypes.c_int8, ctypes.c_float]
@@ -131,20 +158,32 @@ def main():
     px_values = np.arange(img1.shape[1])
     py_values = np.arange(img1.shape[0])
     py_grid, px_grid = np.meshgrid(py_values, px_values)
-    coordinate_array = np.dstack([px_grid, py_grid, np.ones_like(px_grid)]).reshape(-1, 3)
-    epipolar = np.dot(F, coordinate_array.T).T
+    coordinate_array_N = np.dstack([px_grid, py_grid, np.ones_like(px_grid)]).reshape(-1, 3)
+    epipolar = np.dot(F, coordinate_array_N.T).T
+    coordinate_array = np.dstack([px_grid, py_grid]).reshape(-1, 2).astype(np.uint16)
+    print(coordinate_array.dtype)
+    # print(epipolar)
     points_1 = []
     points_2 = []
     print('testing...')
     # lib.maini()
     # print('here')
-    lib = ctypes.CDLL('./lib_test.so')
-    lib.process_image.argtypes = [*args_cpp_nparray(img1_plot), *args_cpp_nparray(img2_plot), *args_cpp_nparray(coordinate_array.astype(np.uint16)), *args_cpp_nparray(epipolar), ctypes.c_int, ctypes.c_float]
-    lib.process_image(*cpp_nparray(img1_plot), *cpp_nparray(img2_plot), *cpp_nparray(coordinate_array.astype(np.uint16)), *cpp_nparray(epipolar), 5, 0.8)
-
-    # points_1, points_2 = lib.find_matching_points(img1, img2, coordinate_array.astype(np.uint16), epipolar, 5, 0.8)
-    
-    # print(coordinate_array.shape)
+    # lib = ctypes.CDLL('./lib_test.so')
+    lib = ctypes.CDLL('./libmatching_points.so')
+    lib.process_data.restype = PointsPair
+    lib.process_data.argtypes = [*args_cpp_nparray(img1_plot), *args_cpp_nparray(img2_plot), *args_cpp_nparray(coordinate_array), *args_cpp_nparray(epipolar), ctypes.c_int, ctypes.c_float]
+    data = lib.process_data(*cpp_nparray(img1_plot), *cpp_nparray(img2_plot), *cpp_nparray(coordinate_array), *cpp_nparray(epipolar), 5, 0.8)
+    # lib.process_data.argtypes = [*args_cpp_nparray(np.expand_dims(img1, axis=-1)), *args_cpp_nparray(np.expand_dims(img2, axis=-1)), *args_cpp_nparray(coordinate_array), *args_cpp_nparray(epipolar), ctypes.c_int, ctypes.c_float]
+    # data = lib.process_data(*cpp_nparray(np.expand_dims(img1, axis=-1)), *cpp_nparray(np.expand_dims(img2, axis=-1)), *cpp_nparray(coordinate_array), *cpp_nparray(epipolar), 5, 0.8)
+    for i in range(data.first_size):
+        points_1.append([data.first[i].x, data.first[i].y])
+    for i in range(data.second_size):
+        points_2.append([data.second[i].x, data.second[i].y])
+    pcd = triangulate_and_plot(P1, P2, np.array(points_1, dtype=float), np.array(points_2, dtype=float), img1_back, img2_back)
+    pcd2 = remove_isolated_points(pcd, nb_neighbors=5, std_ratio=0.01)
+    o3d.visualization.draw_geometries([pcd2])
+    # print(img1.shape)
+    # print(np.expand_dims(img1, axis=-1).shape)
 
 if __name__ == "__main__":
     # profile = cProfile.Profile()

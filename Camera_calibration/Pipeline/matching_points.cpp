@@ -107,16 +107,16 @@ extern "C" {
                        double_t* epipolar_array, int epipolar_rows, int epipolar_cols,
                        int window_size=5, float l_ratio = 0.8) {
 
-        std::cout << "Converting from c-types to OpenCV...." << std::endl;
+        std::cout << "########### Converting from c-types to OpenCV C++ ###########" << std::endl;
         cv::Mat image1 = receive_image(data,rows,cols,channels);
-        std::cout << "image1" << std::endl;
+        std::cout << "[ OK ] Image1 converted         | Size: " << image1.size() << std::endl;
         cv::Mat image2 = receive_image(data2,rows2,cols2,channels2);
-        std::cout << "image2" << std::endl;
+        std::cout << "[ OK ] Image2 converted         | Size: " << image2.size() << std::endl;
         std::vector<cv::Point> points = convertToPoints(coord_array, coord_rows, coord_cols);
-        std::cout << "points" << std::endl;
+        std::cout << "[ OK ] Coordinates converted    | Size: " << points.size() << " rows" << std::endl;
         std::vector<cv::Vec3d> epipolars = convertToEpipolar(epipolar_array, epipolar_rows, epipolar_cols);
-        std::cout << "epipolars" << std::endl;
-        std::cout << "Conversion completed\nStarting matching points...." << std::endl;
+        std::cout << "[ OK ] Epipolar lines converted | Size: " << epipolars.size() << " rows" << std::endl;
+        std::cout << "################### Conversion completed ####################\nStarting matching points...." << std::endl;
 
         std::pair<std::vector<cv::Point>, std::vector<cv::Point>> matches = find_matching_points(image1, image2, points, epipolars, window_size, l_ratio);
 
@@ -134,6 +134,7 @@ extern "C" {
         result.second[i].x = matches.second[i].x;
         result.second[i].y = matches.second[i].y;
     }
+    std::cout << "#################### Matching completed ######################\nSending to python..." << std::endl;
     return result;
         }
 }

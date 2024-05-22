@@ -116,6 +116,7 @@ class PointsPair(ctypes.Structure):
 
 
 def main():
+    print('Loading Data...')
     img1 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png", cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_2.png", cv2.IMREAD_GRAYSCALE)
     img1_back = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png")
@@ -127,16 +128,18 @@ def main():
                 [0.000000, 0.000000, 1.000000]])
     distCoeffs1 = None
     distCoeffs2 = None
+    print('Feature matching (calibration)...')
     points1, points2 = feature_match(img1, img2, visualization=False)
+    print('Calibration...')
     R, t, F, P1, P2 = calibrate_cameras(points1, points2, K, distCoeffs1, K, distCoeffs2)
     
     # Save data
+    print('Computing and organizing data...')
     px_values = np.arange(img1.shape[1])
     py_values = np.arange(img1.shape[0])
     py_grid, px_grid = np.meshgrid(py_values, px_values)
     coordinate_array_N = np.dstack([px_grid, py_grid, np.ones_like(px_grid)]).reshape(-1, 3)
     epipolar = np.dot(F, coordinate_array_N.T).T
-    print(epipolar[-1])
     coordinate_array = np.dstack([px_grid, py_grid]).reshape(-1, 2).astype(np.uint16)
     points_1 = []
     points_2 = []
@@ -152,7 +155,7 @@ def main():
         points_1.append([data.first[i].x, data.first[i].y])
     for i in range(data.second_size):
         points_2.append([data.second[i].x, data.second[i].y])
-    print(f"Tempo total: {time.time() - time_a}")
+    print(f"Total time in C++: {time.time() - time_a} s")
     pcd = triangulate_and_plot(P1, P2, np.array(points_1, dtype=float), np.array(points_2, dtype=float), img1_back, img2_back)
     pcd2 = remove_isolated_points(pcd, nb_neighbors=5, std_ratio=0.01)
     o3d.visualization.draw_geometries([pcd2])

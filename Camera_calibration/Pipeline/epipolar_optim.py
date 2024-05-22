@@ -11,6 +11,7 @@ from tqdm import tqdm
 import cProfile
 import open3d as o3d
 import ctypes
+import time
 
 
 def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, lowe_ratio:float = 0.3, visualization:bool = 0):
@@ -107,37 +108,14 @@ def cpp_nparray(array):
     return array, *array.shape
 
 
-
-
-
-
-
-# from ctypes import *
-
 class Point(ctypes.Structure):
     _fields_ = [("x", ctypes.c_int), ("y", ctypes.c_int)]
 
 class PointsPair(ctypes.Structure):
     _fields_ = [("first", ctypes.POINTER(Point)), ("first_size", ctypes.c_int), ("second", ctypes.POINTER(Point)), ("second_size", ctypes.c_int)]
 
-# lib = ctypes.cdll.LoadLibrary("your_library.so")
-# get_points = lib.get_points
-
-# data = get_points()
-# for i in range(data.first_size):
-#     print(data.first[i].x, data.first[i].y)
-# for i in range(data.second_size):
-#     print(data.second[i].x, data.second[i].y)
-
-
-
-
-
-
 
 def main():
-    # lib = ctypes.cdll.LoadLibrary('./libmatching_points.so')
-    # lib.find_matching_points.argtypes = [np.ctypeslib.ndpointer(dtype=np.uint8), np.ctypeslib.ndpointer(dtype=np.uint8),  np.ctypeslib.ndpointer(dtype=np.uint16), np.ctypeslib.ndpointer(dtype=np.float64), ctypes.c_int8, ctypes.c_float]
     img1 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png", cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_2.png", cv2.IMREAD_GRAYSCALE)
     img1_back = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png")
@@ -152,23 +130,18 @@ def main():
     points1, points2 = feature_match(img1, img2, visualization=False)
     R, t, F, P1, P2 = calibrate_cameras(points1, points2, K, distCoeffs1, K, distCoeffs2)
     
-    
-    
     # Save data
     px_values = np.arange(img1.shape[1])
     py_values = np.arange(img1.shape[0])
     py_grid, px_grid = np.meshgrid(py_values, px_values)
     coordinate_array_N = np.dstack([px_grid, py_grid, np.ones_like(px_grid)]).reshape(-1, 3)
     epipolar = np.dot(F, coordinate_array_N.T).T
+    print(epipolar[-1])
     coordinate_array = np.dstack([px_grid, py_grid]).reshape(-1, 2).astype(np.uint16)
-    print(coordinate_array.dtype)
-    # print(epipolar)
     points_1 = []
     points_2 = []
-    print('testing...')
-    # lib.maini()
-    # print('here')
-    # lib = ctypes.CDLL('./lib_test.so')
+    print('Sending to C++')
+    time_a = time.time()
     lib = ctypes.CDLL('./libmatching_points.so')
     lib.process_data.restype = PointsPair
     lib.process_data.argtypes = [*args_cpp_nparray(img1_plot), *args_cpp_nparray(img2_plot), *args_cpp_nparray(coordinate_array), *args_cpp_nparray(epipolar), ctypes.c_int, ctypes.c_float]
@@ -179,11 +152,10 @@ def main():
         points_1.append([data.first[i].x, data.first[i].y])
     for i in range(data.second_size):
         points_2.append([data.second[i].x, data.second[i].y])
+    print(f"Tempo total: {time.time() - time_a}")
     pcd = triangulate_and_plot(P1, P2, np.array(points_1, dtype=float), np.array(points_2, dtype=float), img1_back, img2_back)
     pcd2 = remove_isolated_points(pcd, nb_neighbors=5, std_ratio=0.01)
     o3d.visualization.draw_geometries([pcd2])
-    # print(img1.shape)
-    # print(np.expand_dims(img1, axis=-1).shape)
 
 if __name__ == "__main__":
     # profile = cProfile.Profile()

@@ -4,13 +4,10 @@ import numpy as np
 import cv2
 from random import randint
 import copy
-import json
-from mpl_toolkits.mplot3d import Axes3D
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import cProfile
 import open3d as o3d
-import ctypes
+import time
 
 
 def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, lowe_ratio:float = 0.3, visualization:bool = 0):
@@ -45,23 +42,73 @@ def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, 
     return points1, points2
 
 def calibrate_cameras(points1, points2, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2):
-    # Find the essential matrix
+    # Find the essential and fundamental matrixes
     E, mask = cv2.findEssentialMat(points1, points2, cameraMatrix1)
     F, mask = cv2.findFundamentalMat(points1, points2)
     # Recover pose
     _, R, t, _ = cv2.recoverPose(E, points1, points2, cameraMatrix1)
-    # print(f"Rotation: \n{R} \nTranslation: \n{t}")
     # Create projection matrices
     P1 = np.hstack((np.eye(3), np.zeros((3, 1))))
     P2 = np.hstack((R, t))
     # Apply the camera intrinsics
     P1 = cameraMatrix1 @ P1
     P2 = cameraMatrix2 @ P2
-    # return P1, P2
-    # print(P1)
-    # print('################################')
-    # print(P2)
     return R, t, F, P1, P2
+
+def find_matching_points(img1, img2, coord_array, epiline_array, window_size=5, l_ratio = 0.8, similarity_func=cv2.norm):
+    points_1 = []
+    points_2 = []
+    for idx, coord in enumerate(tqdm(coord_array)):
+        # Initialize best match (lowest distance)
+        best_match = None
+        second_dist = None
+        best_distance = float('inf')
+    
+        a, b, c = epiline_array[idx]
+    
+        # Iterate over each point in the epipolar line
+        for x in range(0, img2.shape[1]):
+            if b != 0:
+                y = -1*(a*x + c) / b
+                y = int(round(y))  # Ensure y is an integer for indexing
+            else:
+                continue  # If line is vertical, skip this iteration
+    
+            # Check if y is within image bounds
+            if y < 0 or y >= img2.shape[0]:
+                continue
+            
+            a1 = coord[1]-window_size
+            b1 = coord[1]+window_size
+            c1 = coord[0]-window_size
+            d1 = coord[0]+window_size
+            a2 = y-window_size
+            b2 = y+window_size
+            c2 = x-window_size
+            d2 = x+window_size
+    
+            if a1 < 0 or c1 <0 or a2 <0 or c2 <0 or b1 > img1.shape[0] or d1 > img1.shape[1] or b2 > img2.shape[0] or d2 > img2.shape[1]:
+                continue
+
+            # Compute similarity measure
+            distance = similarity_func(img1[a1:b1, c1:d1],
+                                    img2[a2:b2, c2:d2], cv2.NORM_L1)
+            # Update best match if better
+            if distance < best_distance:
+                second_dist = best_distance
+                best_distance = distance
+                best_match = (x, y)
+        # Remove invalids
+        if second_dist == float('inf') or second_dist is None:
+            best_match = None
+        # Filter results
+        elif not(best_distance < l_ratio*second_dist):
+            best_match = None
+        # Append valid results
+        if not(best_match is None):
+            points_1.append((coord[0], coord[1]))
+            points_2.append(best_match)
+    return points_1, points_2
 
 
 def triangulate_and_plot(P1, P2, points1, points2, img1, img2):
@@ -96,9 +143,10 @@ def remove_isolated_points(pcd, nb_neighbors=20, std_ratio=2.0):
 
     # Return inlier point cloud
     return cl
+    
+    
+
 def main():
-    lib = ctypes.cdll.LoadLibrary('./libmatching_points.so')
-    lib.find_matching_points.argtypes = [np.ctypeslib.ndpointer(dtype=np.uint8), np.ctypeslib.ndpointer(dtype=np.uint8),  np.ctypeslib.ndpointer(dtype=np.uint16), np.ctypeslib.ndpointer(dtype=np.float64), ctypes.c_int8, ctypes.c_float]
     img1 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png", cv2.IMREAD_GRAYSCALE)
     img2 = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_2.png", cv2.IMREAD_GRAYSCALE)
     img1_back = cv2.imread("/home/gribeiro/PhD/phd_experiments/Camera_calibration/Feature_match/Sift/Images/astra/curved/img_0_1.png")
@@ -112,21 +160,21 @@ def main():
     distCoeffs2 = None
     points1, points2 = feature_match(img1, img2, visualization=False)
     R, t, F, P1, P2 = calibrate_cameras(points1, points2, K, distCoeffs1, K, distCoeffs2)
-    
-    
-    
+
+
+
     # Save data
     px_values = np.arange(img1.shape[1])
     py_values = np.arange(img1.shape[0])
     py_grid, px_grid = np.meshgrid(py_values, px_values)
     coordinate_array = np.dstack([px_grid, py_grid, np.ones_like(px_grid)]).reshape(-1, 3)
     epipolar = np.dot(F, coordinate_array.T).T
-    points_1 = []
-    points_2 = []
-    points_1, points_2 = lib.find_matching_points(img1, img2, coordinate_array.astype(np.uint16), epipolar, 5, 0.8)
+    time_a = time.time()
+    best_points = find_matching_points(img1, img2, coordinate_array, epipolar, window_size=5, similarity_func=cv2.norm)
+    print(f"Time in dense feature matching: {time.time()-time_a}")
+    pcd = triangulate_and_plot(P1, P2, np.array(best_points[0], dtype=float), np.array(best_points[1], dtype=float), img1_back, img2_back)
+    pcd2 = remove_isolated_points(pcd, nb_neighbors=5, std_ratio=0.01)
+    o3d.visualization.draw_geometries([pcd2])
 
 if __name__ == "__main__":
-    profile = cProfile()
     main()
-    profile.print_stats()
-    

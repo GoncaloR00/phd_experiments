@@ -46,22 +46,17 @@ def feature_match(image_a:np.ndarray, image_b: np.ndarray, features:int = 5000, 
     return points1, points2
 
 def calibrate_cameras(points1, points2, cameraMatrix1, distCoeffs1, cameraMatrix2, distCoeffs2):
-    # Find the essential matrix
+    # Find the essential and fundamental matrixes
     E, mask = cv2.findEssentialMat(points1, points2, cameraMatrix1)
     F, mask = cv2.findFundamentalMat(points1, points2)
     # Recover pose
     _, R, t, _ = cv2.recoverPose(E, points1, points2, cameraMatrix1)
-    # print(f"Rotation: \n{R} \nTranslation: \n{t}")
     # Create projection matrices
     P1 = np.hstack((np.eye(3), np.zeros((3, 1))))
     P2 = np.hstack((R, t))
     # Apply the camera intrinsics
     P1 = cameraMatrix1 @ P1
     P2 = cameraMatrix2 @ P2
-    # return P1, P2
-    # print(P1)
-    # print('################################')
-    # print(P2)
     return R, t, F, P1, P2
 
 

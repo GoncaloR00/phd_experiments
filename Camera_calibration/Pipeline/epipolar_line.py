@@ -148,75 +148,75 @@ if __name__=="__main__":
     points1, points2 = feature_match(img1, img2, visualization=False)
     R, t, F, P1, P2 = calibrate_cameras(points1, points2, K, distCoeffs1, K, distCoeffs2)
 
-    # Graphical
-    while 1:
-        try:
-            # displaying the image 
-            cv2.imshow('point', img1_plot)
-            cv2.imshow('line', img2_plot)
-            # setting mouse handler for the image 
-            # and calling the click_event() function 
-            cv2.setMouseCallback('point', click_event)
-            if not(x_mouse == old_x_mouse or y_mouse == old_y_mouse):
-                old_x_mouse = x_mouse
-                old_y_mouse = y_mouse
-                print(f"#################\nX: {x_mouse}\nY: {y_mouse}\n#################\n")
-                img1_plot = copy.deepcopy(img1_back)
-                img2_plot = copy.deepcopy(img2_back)
-                point_in_image_1 = (x_mouse, y_mouse)
-                cv2.circle(img1_plot, point_in_image_1, 1, (0,0,255), 2)
-                # Convert the point to homogeneous coordinates.
-                point_in_image_1_hom = np.array([*point_in_image_1, 1])
-                # Compute the corresponding epipolar line in the second image.
-                epipolar_line_in_image_2 = np.dot(F, point_in_image_1_hom)
-                _, cols = img2.shape[:2]
-                x0, y0 = map(int, [0, -epipolar_line_in_image_2[2]/epipolar_line_in_image_2[1]])
-                x1, y1 = map(int, [cols, -(epipolar_line_in_image_2[2] + epipolar_line_in_image_2[0]*cols) / epipolar_line_in_image_2[1]])
-                a = y1-y0
-                b = x0-x1
-                c = y0*(x1-x0)-(y1-y0)*x0
-                epiline = [a, b, c]
-                print(epiline)
-                print(f"x0 = {x0}\nx1 = {x1}\ny0 = {y0}\ny1 = {y1}\n")
-                best_point = find_matching_point(img1, img2, point_in_image_1, epiline, window_size=5, similarity_func=cv2.norm)
-                img2_plot = cv2.line(img2_plot, (x0, y0), (x1, y1), color=(255, 0, 0), thickness=1)
-                if not(best_point is None):
-                    cv2.circle(img2_plot, (int(best_point[0]), int(best_point[1])), 1, (0,0,255), 2)
-            cv2.waitKey(1) 
-        except KeyboardInterrupt:
-            break
-
-
-
-    # # Save data
-    # points_1 = []
-    # points_2 = []
-    # for px in range(0, img1.shape[1]):
-    #     for py in range(0, img1.shape[0]):
+    # # Graphical
+    # while 1:
+    #     try:
     #         # displaying the image 
     #         cv2.imshow('point', img1_plot)
     #         cv2.imshow('line', img2_plot)
-    #         img1_plot = copy.deepcopy(img1_back)
-    #         img2_plot = copy.deepcopy(img2_back)
-    #         point_in_image_1 = (px, py)
-    #         cv2.circle(img1_plot, point_in_image_1, 1, (0,0,255), 2)
-    #         # Convert the point to homogeneous coordinates.
-    #         point_in_image_1_hom = np.array([*point_in_image_1, 1])
-    #         # Compute the corresponding epipolar line in the second image.
-    #         epipolar_line_in_image_2 = np.dot(F, point_in_image_1_hom)
-    #         _, cols = img2.shape[:2]
-    #         x0, y0 = map(int, [0, -epipolar_line_in_image_2[2]/epipolar_line_in_image_2[1]])
-    #         x1, y1 = map(int, [cols, -(epipolar_line_in_image_2[2] + epipolar_line_in_image_2[0]*cols) / epipolar_line_in_image_2[1]])
-    #         a = y1-y0
-    #         b = x0-x1
-    #         c = y0*(x1-x0)-(y1-y0)*x0
-    #         epiline = [a, b, c]
-    #         print(epiline)
-    #         print(f"x0 = {x0}\nx1 = {x1}\ny0 = {y0}\ny1 = {y1}\n")
-    #         best_point = find_matching_point(img1, img2, point_in_image_1, epiline, window_size=5, similarity_func=cv2.norm)
-    #         img2_plot = cv2.line(img2_plot, (x0, y0), (x1, y1), color=(255, 0, 0), thickness=1)
-    #         if not(best_point is None):
-    #             points_1.append((px, py))
-    #             points_2.append(best_point)
-    #             cv2.circle(img2_plot, (int(best_point[0]), int(best_point[1])), 1, (0,0,255), 2)
-    #         cv2.waitKey(1)
+    #         # setting mouse handler for the image 
+    #         # and calling the click_event() function 
+    #         cv2.setMouseCallback('point', click_event)
+    #         if not(x_mouse == old_x_mouse or y_mouse == old_y_mouse):
+    #             old_x_mouse = x_mouse
+    #             old_y_mouse = y_mouse
+    #             print(f"#################\nX: {x_mouse}\nY: {y_mouse}\n#################\n")
+    #             img1_plot = copy.deepcopy(img1_back)
+    #             img2_plot = copy.deepcopy(img2_back)
+    #             point_in_image_1 = (x_mouse, y_mouse)
+    #             cv2.circle(img1_plot, point_in_image_1, 1, (0,0,255), 2)
+    #             # Convert the point to homogeneous coordinates.
+    #             point_in_image_1_hom = np.array([*point_in_image_1, 1])
+    #             # Compute the corresponding epipolar line in the second image.
+    #             epipolar_line_in_image_2 = np.dot(F, point_in_image_1_hom)
+    #             _, cols = img2.shape[:2]
+    #             x0, y0 = map(int, [0, -epipolar_line_in_image_2[2]/epipolar_line_in_image_2[1]])
+    #             x1, y1 = map(int, [cols, -(epipolar_line_in_image_2[2] + epipolar_line_in_image_2[0]*cols) / epipolar_line_in_image_2[1]])
+    #             a = y1-y0
+    #             b = x0-x1
+    #             c = y0*(x1-x0)-(y1-y0)*x0
+    #             epiline = [a, b, c]
+    #             print(epiline)
+    #             print(f"x0 = {x0}\nx1 = {x1}\ny0 = {y0}\ny1 = {y1}\n")
+    #             best_point = find_matching_point(img1, img2, point_in_image_1, epiline, window_size=5, similarity_func=cv2.norm)
+    #             img2_plot = cv2.line(img2_plot, (x0, y0), (x1, y1), color=(255, 0, 0), thickness=1)
+    #             if not(best_point is None):
+    #                 cv2.circle(img2_plot, (int(best_point[0]), int(best_point[1])), 1, (0,0,255), 2)
+    #         cv2.waitKey(1) 
+    #     except KeyboardInterrupt:
+    #         break
+
+
+
+    # Save data
+    points_1 = []
+    points_2 = []
+    for px in range(150, img1.shape[1]):
+        for py in range(0, img1.shape[0]):
+            # displaying the image 
+            cv2.imshow('point', img1_plot)
+            cv2.imshow('line', img2_plot)
+            img1_plot = copy.deepcopy(img1_back)
+            img2_plot = copy.deepcopy(img2_back)
+            point_in_image_1 = (px, py)
+            cv2.circle(img1_plot, point_in_image_1, 1, (0,0,255), 2)
+            # Convert the point to homogeneous coordinates.
+            point_in_image_1_hom = np.array([*point_in_image_1, 1])
+            # Compute the corresponding epipolar line in the second image.
+            epipolar_line_in_image_2 = np.dot(F, point_in_image_1_hom)
+            _, cols = img2.shape[:2]
+            x0, y0 = map(int, [0, -epipolar_line_in_image_2[2]/epipolar_line_in_image_2[1]])
+            x1, y1 = map(int, [cols, -(epipolar_line_in_image_2[2] + epipolar_line_in_image_2[0]*cols) / epipolar_line_in_image_2[1]])
+            a = y1-y0
+            b = x0-x1
+            c = y0*(x1-x0)-(y1-y0)*x0
+            epiline = [a, b, c]
+            print(epiline)
+            print(f"x0 = {x0}\nx1 = {x1}\ny0 = {y0}\ny1 = {y1}\n")
+            best_point = find_matching_point(img1, img2, point_in_image_1, epiline, window_size=5, similarity_func=cv2.norm)
+            img2_plot = cv2.line(img2_plot, (x0, y0), (x1, y1), color=(255, 0, 0), thickness=1)
+            if not(best_point is None):
+                points_1.append((px, py))
+                points_2.append(best_point)
+                cv2.circle(img2_plot, (int(best_point[0]), int(best_point[1])), 1, (0,0,255), 2)
+            cv2.waitKey(1)

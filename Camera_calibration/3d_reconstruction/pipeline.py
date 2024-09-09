@@ -12,8 +12,9 @@ from calibration.calibration import calibrate_cameras
 from triangulate.triangulate import triangulate
 from dense_match.dense_match import dense_match
 from outlier_removal.outlier_removal import outlier_removal
-
 import open3d as o3d
+
+import time
 
 
 def rotate_image(mat, angle):
@@ -126,7 +127,7 @@ def tempi(epipolar_line, img2, window_size, up:bool):
     
 
 
-    try_point = reverse_coords(new_point[0], new_point[1], M2)
+    # try_point = reverse_coords(new_point[0], new_point[1], M2)
     
 
     rotated_image = cv2.line(rotated_image, (0, y0_low), (rotated_image.shape[1], y0_low), color=(0, 0, 255), thickness=1)
@@ -143,7 +144,12 @@ def tempi(epipolar_line, img2, window_size, up:bool):
     cv2.imshow('Original image', img2)
     cv2.imshow('Cropped to the window height', reduced_image)
     cv2.imshow('Section of the cropped image', reduced_image[:,200:220,:])
-    cv2.waitKey(0)
+    while True:
+        key = cv2.waitKey(0) & 0xFF
+        if key == ord('q'):
+            break
+    cv2.destroyAllWindows()
+    exit(0)
 
 
 
@@ -202,13 +208,13 @@ def main():
     R, t, F, P1, P2 = calibrate_cameras(points1, points2, K, distCoeffs1, K, distCoeffs2)
     print('Computing and organizing data...')
     epipolar_array, coordinate_array, _ = epipolar_lines(img1, F)
-    tempi(epipolar_array[30000], img2, 10, up = 0)
-    cv2.destroyAllWindows()
-    exit(0)
+    # tempi(epipolar_array[30000], img2, 10, up = 0)
 
 
     print('Dense matching...')
+    a = time.time()
     points_1, points_2 = dense_match(img1, img2, coordinate_array, epipolar_array, algorithm='norm_l1')
+    print(time.time()-a)
     print('Generating point cloud...')
     pcd = triangulate(P1, P2, np.array(points_1, dtype=float), np.array(points_2, dtype=float), img1, img2)
     print('Removing outliers...')

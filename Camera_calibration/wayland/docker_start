@@ -1,0 +1,26 @@
+docker run -it --rm --gpus all -e XDG_RUNTIME_DIR=/tmp \                ✔  11m 6s    18:21:07   
+           -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
+           -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/$WAYLAND_DISPLAY  \
+           --user=$(id -u):$(id -g) \
+           tofi bash
+
+docker run -it --env DISPLAY=$DISPLAY \
+    -v /tmp/.X11-unix:/tmp/.X11-unix \
+    --device=/dev/dri:/dev/dri \
+    -v /dev:/dev \
+    --ulimit nofile=1024:524288 \
+    --ipc=host \
+    --network host \
+    --privileged\
+    --name freenect --rm \
+    gribeiro00/libfreenect
+
+docker run -it --rm \
+            -e DISPLAY=$DISPLAY \
+            -v /tmp/.X11-unix:/tmp/.X11-unix \
+            -e XDG_RUNTIME_DIR=/tmp -e WAYLAND_DISPLAY=$WAYLAND_DISPLAY \
+            -v $XDG_RUNTIME_DIR/$WAYLAND_DISPLAY:/tmp/$WAYLAND_DISPLAY  \
+            --user=$(id -u):$(id -g) \
+            --gpus all \
+            tofi bash
+

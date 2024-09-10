@@ -45,7 +45,7 @@ RUN pip install --no-cache-dir opencv-contrib-python
 # RUN apt install -y wget && wget https://www2.baslerweb.com/media/downloads/software/pylon_software/pylon-7.5.0.15658-linux-x86_64_debs.tar.gz
 # RUN tar -xvf pylon-7.5.0.15658-linux-x86_64_debs.tar.gz && apt install ./pylon_7.5.0.15658-deb0_amd64.deb
 COPY ./* /tmp/
-RUN apt install /tmp/pylon_7.5.0.15658-deb0_amd64.deb
+RUN apt install -y /tmp/pylon_7.5.0.15658-deb0_amd64.deb
 
 # Realsense
 # ................
@@ -65,7 +65,7 @@ RUN python3 -m pip install --no-cache-dir pypylon
 # Realsense python
 RUN pip install --no-cache-dir pyrealsense2
 
-RUN apt install libopencv-dev
+RUN apt install -y libopencv-dev
 
 
 # Define working directory.
